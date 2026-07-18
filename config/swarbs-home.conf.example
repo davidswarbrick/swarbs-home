@@ -40,7 +40,7 @@ url = "http://nas.local:8337"      # beets web — manage the library (see READM
 
 [[cards]]
 name = "Torrent"
-url = "http://nas.local:9091"      # Transmission
+url = "http://nas.local:9091/transmission/web/"   # Transmission (skip the / -> web/ redirect)
 
 [[cards]]
 name = "Syncthing"
