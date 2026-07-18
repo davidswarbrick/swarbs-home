@@ -1,0 +1,57 @@
+# swarbs-home configuration (TOML).
+# Install to /etc/swarbs-home.conf on the NAS.
+
+[server]
+host = "0.0.0.0"
+port = 80              # front door at http://nas.local/  (needs root; see README)
+title = "swarbs home"
+# Optional custom font — NOT shipped with the app. Copy a font file to the NAS
+# and set both of these; otherwise the pages use a system sans-serif.
+# font_family = "Neue Haas Grotesk"
+# font_file = "/usr/local/share/fonts/mybrand.woff2"
+font_family = ""
+font_file = ""
+
+[recorder]
+enabled = true
+device = "hw:CODEC"
+# ~ expands to the home of the user the service runs as (root under the systemd
+# unit -> /root/Music/Mixes). Set an absolute path, or run the service as your user.
+mixes_dir = "~/Music/Mixes"
+sample_rate = 44100
+channels = 2
+state_dir = "/run/swarbs-home"
+recent_count = 10
+
+# Landing page cards, in order. Edit freely.
+# Replace `nas.local` with your machine's mDNS name (<hostname>.local).
+[[cards]]
+name = "Recorder"
+url = "/recorder"
+
+[[cards]]
+name = "Music"
+url = "http://nas.local:8533"      # myMPD — play the library (see README)
+
+[[cards]]
+name = "Library"
+url = "http://nas.local:8337"      # beets web — manage the library (see README)
+
+[[cards]]
+name = "Torrent"
+url = "http://nas.local:9091"      # Transmission
+
+[[cards]]
+name = "Syncthing"
+url = "http://nas.local:8384"
+
+[[cards]]
+name = "Admin"
+url = "http://nas.local:8080"      # OMV, after moving its port off :80
+
+# --- Uncomment once the service is running ---
+
+# Photoprism (photos):
+# [[cards]]
+# name = "Photos"
+# url = "http://nas.local:2342"

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} — Recorder</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+{% if font %}
+<style>
+@font-face {
+    font-family: "{{ font.family }}";
+    src: url("{{ font.url }}"){% if font.format %} format("{{ font.format }}"){% endif %};
+    font-display: swap;
+}
+:root { --brand-font: "{{ font.family }}", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+</style>
+{% endif %}
+</head>
+<body>
+<div class="recorder">
+    <a class="home-link" href="/">home</a>
+
+    <div id="statusline" class="statusline">…</div>
+
+    <button id="btn" class="rec-button" disabled>…</button>
+
+    <div class="meta">
+        <label class="labelrow">
+            <span>Label (optional)</span>
+            <input id="label" type="text" placeholder="e.g. sunset-set" autocomplete="off">
+        </label>
+        <div id="preview" class="preview"></div>
+        <div id="disk" class="disk"></div>
+    </div>
+
+    <div class="recent">
+        <div class="recent-head">Recent mixes</div>
+        <ul id="recent"></ul>
+    </div>
+
+    <div id="error" class="error"></div>
+</div>
+
+<script>
+const btn = document.getElementById('btn');
+const statusline = document.getElementById('statusline');
+const labelInput = document.getElementById('label');
+const preview = document.getElementById('preview');
+const disk = document.getElementById('disk');
+const recent = document.getElementById('recent');
+const errorBox = document.getElementById('error');
+
+let recording = false;
+let available = false;
+let mpd = false;
+
+function fmt(sec) {
+    sec = Math.max(0, sec | 0);
+    const h = String((sec / 3600) | 0).padStart(2, '0');
+    const m = String(((sec % 3600) / 60) | 0).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+}
+
+function render(st) {
+    available = st.available;
+    recording = st.recording;
+    mpd = st.mpd;
+    errorBox.textContent = '';
+
+    if (!available) {
+        statusline.textContent = 'Recorder unavailable — ' + (st.reason || 'not on the NAS');
+        statusline.className = 'statusline unavailable';
+        btn.textContent = 'Unavailable';
+        btn.disabled = true;
+        btn.className = 'rec-button';
+    } else if (recording) {
+        statusline.innerHTML = '<span class="dot"></span> RECORDING &nbsp; ' + fmt(st.elapsed);
+        statusline.className = 'statusline live';
+        btn.textContent = 'STOP';
+        btn.disabled = false;
+        btn.className = 'rec-button stop';
+    } else {
+        statusline.textContent = st.failed ? 'Last recording failed — check the codec' : 'Idle';
+        statusline.className = 'statusline' + (st.failed ? ' unavailable' : '');
+        btn.textContent = 'START';
+        btn.disabled = false;
+        btn.className = 'rec-button start';
+    }
+
+    preview.textContent = recording
+        ? (st.filename || '')
+        : (available ? 'next: ' + st.next_filename : '');
+    disk.textContent = st.disk_free_gb != null ? st.disk_free_gb + ' GB free' : '';
+
+    recent.innerHTML = '';
+    (st.recent || []).forEach(r => {
+        const li = document.createElement('li');
+        if (mpd) {
+            const play = document.createElement('button');
+            play.className = 'play-btn';
+            play.textContent = '▶';   // ▶
+            play.title = 'Play via MPD';
+            play.addEventListener('click', () => playFile(r.name, play));
+            li.appendChild(play);
+        }
+        const a = document.createElement('a');
+        a.className = 'rec-name';
+        a.href = '/media/' + encodeURIComponent(r.name);
+        a.textContent = r.name;
+        const span = document.createElement('span');
+        span.className = 'size';
+        span.textContent = r.size_mb + ' MB';
+        li.appendChild(a);
+        li.appendChild(span);
+        recent.appendChild(li);
+    });
+}
+
+async function playFile(name, btn) {
+    errorBox.textContent = '';
+    if (btn) btn.disabled = true;
+    try {
+        const r = await fetch('/api/play', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name }),
+        });
+        const data = await r.json();
+        if (!data.ok) errorBox.textContent = data.error || 'could not play';
+    } catch (e) {
+        errorBox.textContent = 'could not reach server';
+    }
+    if (btn) btn.disabled = false;
+}
+
+async function poll() {
+    try {
+        const r = await fetch('/api/status');
+        render(await r.json());
+    } catch (e) {
+        statusline.textContent = 'Cannot reach server';
+    }
+}
+
+btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    const url = recording ? '/api/stop' : '/api/start';
+    const body = recording ? {} : { label: labelInput.value };
+    try {
+        const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await r.json();
+        if (!data.ok) errorBox.textContent = data.error || 'request failed';
+    } catch (e) {
+        errorBox.textContent = 'request failed';
+    }
+    await poll();
+});
+
+poll();
+setInterval(poll, 2000);
+</script>
+</body>
+</html>

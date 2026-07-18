@@ -1,0 +1,255 @@
+/* --brand-font is optionally set to a custom font by the page <head> (see
+   config: font_family / font_file). If unset, fall back to a system stack. */
+a {
+    color: black;
+    text-decoration: none;
+}
+
+body {
+    margin: 0;
+    font-family: var(--brand-font, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif);
+}
+
+/* ---- landing page ----
+   Basic CSS grid that fills the viewport:
+   - portrait / narrow  -> 1 column  (6 cards = 6 x 1, a vertical stack)
+   - square or wider    -> 2 columns (6 cards = 2 x 3)
+   Rows auto-size to share the height evenly however many cards there are. */
+.container {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-auto-rows: 1fr;
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-aspect-ratio: 1/1) {
+    .container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.card {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.card:hover {
+    background-color: lightgray;
+}
+
+.text {
+    font-family: inherit;
+    font-size: 2em;
+    height: min-content;
+}
+
+/* ---- recorder page ---- */
+.recorder {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.home-link {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.95em;
+    opacity: 0.6;
+}
+
+/* left chevron drawn in CSS so it matches the font colour/weight exactly
+   (the Haas Grotesk woff has no arrow glyph) and scales with font-size */
+.home-link::before {
+    content: "";
+    width: 0.42em;
+    height: 0.42em;
+    margin-right: 0.5em;
+    border-left: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+}
+
+.statusline {
+    font-size: 1.6em;
+    text-align: center;
+    min-height: 1.4em;
+}
+
+.statusline.live {
+    color: #d21e1e;
+}
+
+.statusline.unavailable {
+    color: #b58900;
+    font-size: 1.1em;
+}
+
+.dot {
+    display: inline-block;
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 50%;
+    background: #d21e1e;
+    vertical-align: middle;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.rec-button {
+    font-family: inherit;
+    font-size: 2.2em;
+    padding: 0.8em 0;
+    width: 100%;
+    border: 2px solid currentColor;
+    border-radius: 14px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.rec-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.rec-button.start {
+    color: #1a8a2e;
+}
+
+.rec-button.stop {
+    color: #d21e1e;
+}
+
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.labelrow {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.labelrow input {
+    font-family: inherit;
+    font-size: 1.1em;
+    padding: 8px 10px;
+    border: 1px solid #999;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+}
+
+.preview {
+    font-family: monospace;
+    opacity: 0.7;
+    min-height: 1.2em;
+}
+
+.disk {
+    font-size: 0.85em;
+    opacity: 0.6;
+}
+
+.recent-head {
+    font-size: 0.9em;
+    opacity: 0.6;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+    padding-bottom: 4px;
+}
+
+.recent ul, #recent {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#recent li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.95em;
+}
+
+#recent .rec-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#recent .size {
+    opacity: 0.5;
+    font-variant-numeric: tabular-nums;
+    flex: none;
+}
+
+.play-btn {
+    flex: none;
+    font-size: 1em;
+    line-height: 1;
+    padding: 4px 8px;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.75;
+}
+
+.play-btn:hover {
+    opacity: 1;
+}
+
+.play-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.error {
+    color: #d21e1e;
+    min-height: 1.2em;
+    text-align: center;
+}
+
+/* ---- dark mode (from the template, extended) ---- */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: black;
+    }
+
+    a {
+        color: white;
+    }
+
+    .card {
+        background-color: black;
+    }
+
+    .card:hover {
+        background-color: rgb(37, 37, 37);
+    }
+
+    .labelrow input {
+        border-color: #555;
+    }
+}

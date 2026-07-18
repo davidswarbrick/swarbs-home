@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+{% if font %}
+<style>
+@font-face {
+    font-family: "{{ font.family }}";
+    src: url("{{ font.url }}"){% if font.format %} format("{{ font.format }}"){% endif %};
+    font-display: swap;
+}
+:root { --brand-font: "{{ font.family }}", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+</style>
+{% endif %}
+</head>
+<body>
+<div class="container">
+    {% for card in cards %}
+    <a href="{{ card.url }}" class="card">
+        <div class="text">{{ card.name }}</div>
+    </a>
+    {% endfor %}
+</div>
+</body>
+</html>

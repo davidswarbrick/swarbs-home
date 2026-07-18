@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual envs / uv
+.venv/
+uv.lock
+
+# Local dev config & recordings
+swarbs-home.conf
+*.flac
+*.wav
+.incoming/
+
+# Fonts are not distributed — copy your own to the NAS and set font_file
+*.woff
+*.woff2
+*.ttf
+*.otf
+
+# Editor / OS
+.DS_Store
+*.swp

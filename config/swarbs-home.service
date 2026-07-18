@@ -1,0 +1,16 @@
+[Unit]
+Description=swarbs-home NAS dashboard + DJ recorder
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Installed by install.sh into /usr/local/bin via pipx.
+# Runs as root only to bind :80; recording is a plain subprocess (no systemd-run).
+# LAN-only appliance, no auth (by design).
+ExecStart=/usr/local/bin/swarbs-home serve --config /etc/swarbs-home.conf
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

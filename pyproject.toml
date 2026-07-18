@@ -1,0 +1,31 @@
+[project]
+name = "swarbs-home"
+version = "0.1.0"
+description = "NAS landing page + one-click DJ recorder (Flask) for an Odroid HC4"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "David Swarbrick" }]
+dependencies = [
+    "flask>=3.0,<4.0",
+    "waitress>=3.0,<4.0",
+]
+
+[project.scripts]
+swarbs-home = "swarbs_home.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/swarbs_home"]
+
+# Ship templates, static CSS and the woff font inside the wheel.
+[tool.hatch.build.targets.wheel.force-include]
+"src/swarbs_home/templates" = "swarbs_home/templates"
+"src/swarbs_home/static" = "swarbs_home/static"
+
+[tool.uv]
+# Dev conveniences; `uv run swarbs-home serve` just works.
+package = true
