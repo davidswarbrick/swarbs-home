@@ -85,18 +85,24 @@ required for the dashboard or recorder; install them when you want them.
 ### Music — MPD + myMPD web UI
 
 [myMPD](https://github.com/jcorporation/myMPD) is a single-binary web front end
-for MPD. MPD plays the library; myMPD is the browser UI.
+for MPD. MPD plays the library; myMPD is the browser UI. MPD is in Debian's
+repos; myMPD ships via the maintainer's openSUSE Build Service repo (adjust
+`Debian_13` to your release).
 
 ```bash
-sudo apt install mpd mympd
-
-# Point MPD at your library and give it an output, in /etc/mpd.conf:
+# MPD + your library, in /etc/mpd.conf:
 #   music_directory  "/home/<user>/Music"
 #   (plus an audio_output — e.g. your USB codec or an httpd stream; see mpd docs)
+#   bind_to_address  "/run/mpd/socket"   # needed for the recorder's Play buttons
+sudo apt install -y mpd
 sudo systemctl enable --now mpd
 
-# myMPD stores each setting as a file in its config dir. Move it off :80
-# (the dashboard owns :80) to match the "Music" card (8533):
+# myMPD from the OBS repo:
+echo 'deb http://download.opensuse.org/repositories/home:/jcorporation/Debian_13/ /' | sudo tee /etc/apt/sources.list.d/home:jcorporation.list
+curl -fsSL https://download.opensuse.org/repositories/home:/jcorporation/Debian_13/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/home_jcorporation.gpg > /dev/null
+sudo apt update && sudo apt install -y mympd
+
+# Move myMPD off :80 (the dashboard owns it) to match the "Music" card (8533):
 sudo systemctl stop mympd
 echo 8533 | sudo tee /var/lib/mympd/config/http_port
 sudo systemctl enable --now mympd
