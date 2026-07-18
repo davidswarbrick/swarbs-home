@@ -11,6 +11,7 @@ database update — MPD must simply be able to read the file.
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import time
@@ -24,10 +25,25 @@ class PlayerError(RuntimeError):
 _cache = {"ts": 0.0, "ok": False}
 _CACHE_TTL = 10.0
 
+# MPD forbids adding local file:// URIs over TCP; a unix socket connection is
+# treated as local and is allowed. Prefer a socket when one exists.
+_SOCKETS = ("/run/mpd/socket", "/var/run/mpd/socket")
+
+
+def _mpd_env() -> dict:
+    env = dict(os.environ)
+    if "MPD_HOST" not in env:
+        for sock in _SOCKETS:
+            if os.path.exists(sock):
+                env["MPD_HOST"] = sock
+                break
+    return env
+
 
 def _mpc(args: list[str], timeout: float = 5.0) -> subprocess.CompletedProcess:
     return subprocess.run(
-        ["mpc", *args], capture_output=True, text=True, timeout=timeout
+        ["mpc", *args], capture_output=True, text=True, timeout=timeout,
+        env=_mpd_env(),
     )
 
 
