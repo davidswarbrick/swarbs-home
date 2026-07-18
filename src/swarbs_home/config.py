@@ -38,6 +38,7 @@ DEFAULTS: dict = {
         "channels": 2,
         "state_dir": "/run/swarbs-home",
         "recent_count": 10,
+        "organize": "year",   # file recordings into a <YYYY>/ subfolder ("none" = root)
     },
     # Default cards; override the whole list in the config file.
     "cards": [

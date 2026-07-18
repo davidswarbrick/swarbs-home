@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from flask import (
@@ -19,6 +20,19 @@ from .recorder import Recorder, RecorderError
 
 
 _FONT_FORMATS = {".woff2": "woff2", ".woff": "woff", ".ttf": "truetype", ".otf": "opentype"}
+
+
+def _resolve_flac(mixes_dir, rel: str):
+    """Resolve a mixes-relative path to a .flac file, blocking traversal."""
+    if not rel or not rel.lower().endswith(".flac"):
+        return None
+    base = Path(mixes_dir).resolve()
+    target = (base / rel).resolve()
+    try:
+        target.relative_to(base)
+    except ValueError:
+        return None
+    return target if target.is_file() else None
 
 
 def create_app(config: Config | None = None) -> Flask:
@@ -68,14 +82,11 @@ def create_app(config: Config | None = None) -> Flask:
     @app.route("/api/play", methods=["POST"])
     def api_play():
         data = request.get_json(silent=True) or request.form
-        name = (data.get("name") or "").strip()
-        if not name.endswith(".flac") or "/" in name:
+        target = _resolve_flac(recorder.mixes_dir, (data.get("name") or "").strip())
+        if target is None:
             return jsonify(ok=False, error="invalid file"), 400
-        path = Path(recorder.mixes_dir) / name
-        if not path.is_file():
-            return jsonify(ok=False, error="file not found"), 404
         try:
-            player.play_file(str(path))
+            player.play_file(str(target))
         except player.PlayerError as exc:
             return jsonify(ok=False, error=str(exc)), 400
         return jsonify(ok=True)
@@ -98,13 +109,11 @@ def create_app(config: Config | None = None) -> Flask:
             return jsonify(ok=False, error=str(exc)), 400
         return jsonify(ok=True)
 
-    @app.route("/media/<path:filename>")
-    def media(filename):
-        if not filename.endswith(".flac"):
+    @app.route("/media/<path:relpath>")
+    def media(relpath):
+        target = _resolve_flac(recorder.mixes_dir, relpath)
+        if target is None:
             abort(404)
-        directory = Path(recorder.mixes_dir)
-        if not (directory / filename).is_file():
-            abort(404)
-        return send_from_directory(directory, filename, as_attachment=True)
+        return send_from_directory(target.parent, target.name, as_attachment=True)
 
     return app

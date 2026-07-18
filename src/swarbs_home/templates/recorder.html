@@ -96,17 +96,18 @@ function render(st) {
     recent.innerHTML = '';
     (st.recent || []).forEach(r => {
         const li = document.createElement('li');
+        const rel = r.path || r.name;
         if (mpd) {
             const play = document.createElement('button');
             play.className = 'play-btn';
             play.textContent = '▶';   // ▶
             play.title = 'Play via MPD';
-            play.addEventListener('click', () => playFile(r.name, play));
+            play.addEventListener('click', () => playFile(rel, play));
             li.appendChild(play);
         }
         const a = document.createElement('a');
         a.className = 'rec-name';
-        a.href = '/media/' + encodeURIComponent(r.name);
+        a.href = '/media/' + rel.split('/').map(encodeURIComponent).join('/');
         a.textContent = r.name;
         const span = document.createElement('span');
         span.className = 'size';

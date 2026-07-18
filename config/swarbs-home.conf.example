@@ -20,6 +20,7 @@ device = "hw:CODEC"
 mixes_dir = "~/Music/Mixes"
 sample_rate = 44100
 channels = 2
+organize = "year"     # new recordings go into a <YYYY>/ subfolder ("none" = flat)
 state_dir = "/run/swarbs-home"
 recent_count = 10
 

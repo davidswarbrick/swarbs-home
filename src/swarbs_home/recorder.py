@@ -32,6 +32,11 @@ class RecorderError(RuntimeError):
     pass
 
 
+# folders excluded from the "recent recordings" list
+_SKIP_DIRS = {".incoming", ".stversions", "_dupes", "_review", "_assets",
+              "Downloaded", "Edits"}
+
+
 class Recorder:
     def __init__(self, cfg: dict):
         self.cfg = cfg
@@ -42,6 +47,8 @@ class Recorder:
         self.mixes_dir = Path(cfg.get("mixes_dir", "~/Music/Mixes")).expanduser()
         self.state_dir = Path(cfg.get("state_dir", "/run/swarbs-home")).expanduser()
         self.recent_count = int(cfg.get("recent_count", 10))
+        # "year" -> file recordings into a <YYYY>/ subfolder; "none" -> root
+        self.organize = cfg.get("organize", "year")
 
         self._lock = threading.Lock()
         self._arec: subprocess.Popen | None = None
@@ -140,15 +147,18 @@ class Recorder:
                 raise RecorderError("already recording")
 
             name = self._make_name(label)
+            subdir = name[:4] if self.organize == "year" else ""   # YYYY from the name
+            target_dir = self.mixes_dir / subdir if subdir else self.mixes_dir
             incoming = self.mixes_dir / ".incoming"
             try:
                 incoming.mkdir(parents=True, exist_ok=True)
+                target_dir.mkdir(parents=True, exist_ok=True)
                 self.state_dir.mkdir(parents=True, exist_ok=True)
             except OSError as exc:
                 raise RecorderError(f"cannot create {exc.filename or self.mixes_dir}: {exc}") from exc
 
             tmp = str(incoming / f"{name}.part")
-            final = str(self.mixes_dir / name)
+            final = str(target_dir / name)
 
             arecord_cmd = [
                 "arecord", "-D", self.device,
@@ -280,13 +290,20 @@ class Recorder:
     def _recent(self) -> list:
         if not self.mixes_dir.exists():
             return []
-        files = [p for p in self.mixes_dir.glob("*.flac") if p.is_file()]
-        files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+        files = []
+        for p in self.mixes_dir.rglob("*.flac"):
+            rel = p.relative_to(self.mixes_dir)
+            if rel.parts and rel.parts[0] in _SKIP_DIRS:
+                continue
+            if p.is_file():
+                files.append((p, rel))
+        files.sort(key=lambda t: t[0].stat().st_mtime, reverse=True)
         out = []
-        for p in files[: self.recent_count]:
+        for p, rel in files[: self.recent_count]:
             stat = p.stat()
             out.append({
                 "name": p.name,
+                "path": str(rel),      # relative to mixes_dir, used by /media & /api/play
                 "size_mb": round(stat.st_size / 1e6, 1),
                 "mtime": int(stat.st_mtime),
             })
