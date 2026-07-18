@@ -15,7 +15,6 @@ import os
 import shutil
 import subprocess
 import time
-from urllib.parse import quote
 
 
 class PlayerError(RuntimeError):
@@ -73,8 +72,9 @@ def play_file(abs_path: str) -> None:
             raise PlayerError((listing.stderr or "cannot reach MPD").strip())
         pos = len([ln for ln in listing.stdout.splitlines() if ln.strip()]) + 1
 
-        # abs_path is absolute, so this yields file:///path/with%20spaces.flac
-        uri = "file://" + quote(abs_path)
+        # MPD does not percent-decode file:// URIs, so pass the raw absolute path
+        # (mpc protocol-quotes the argument, so spaces/specials are fine).
+        uri = "file://" + abs_path
         added = _mpc(["add", uri])
         if added.returncode != 0:
             raise PlayerError((added.stderr or "MPD could not add the file").strip())
