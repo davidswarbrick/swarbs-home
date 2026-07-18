@@ -35,6 +35,8 @@ class RecorderError(RuntimeError):
 # folders excluded from the "recent recordings" list
 _SKIP_DIRS = {".incoming", ".stversions", "_dupes", "_review", "_assets",
               "Downloaded", "Edits"}
+# audio formats shown in "recent" / downloadable / playable
+AUDIO_EXTS = {".flac", ".wav", ".mp3", ".m4a", ".aif", ".aiff", ".ogg"}
 
 
 class Recorder:
@@ -291,7 +293,9 @@ class Recorder:
         if not self.mixes_dir.exists():
             return []
         files = []
-        for p in self.mixes_dir.rglob("*.flac"):
+        for p in self.mixes_dir.rglob("*"):
+            if p.suffix.lower() not in AUDIO_EXTS:
+                continue
             rel = p.relative_to(self.mixes_dir)
             if rel.parts and rel.parts[0] in _SKIP_DIRS:
                 continue

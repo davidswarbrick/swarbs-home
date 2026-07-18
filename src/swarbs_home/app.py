@@ -16,15 +16,15 @@ from flask import (
 
 from . import player
 from .config import Config, load_config
-from .recorder import Recorder, RecorderError
+from .recorder import AUDIO_EXTS, Recorder, RecorderError
 
 
 _FONT_FORMATS = {".woff2": "woff2", ".woff": "woff", ".ttf": "truetype", ".otf": "opentype"}
 
 
-def _resolve_flac(mixes_dir, rel: str):
-    """Resolve a mixes-relative path to a .flac file, blocking traversal."""
-    if not rel or not rel.lower().endswith(".flac"):
+def _resolve_audio(mixes_dir, rel: str):
+    """Resolve a mixes-relative path to an audio file, blocking traversal."""
+    if not rel or Path(rel).suffix.lower() not in AUDIO_EXTS:
         return None
     base = Path(mixes_dir).resolve()
     target = (base / rel).resolve()
@@ -82,7 +82,7 @@ def create_app(config: Config | None = None) -> Flask:
     @app.route("/api/play", methods=["POST"])
     def api_play():
         data = request.get_json(silent=True) or request.form
-        target = _resolve_flac(recorder.mixes_dir, (data.get("name") or "").strip())
+        target = _resolve_audio(recorder.mixes_dir, (data.get("name") or "").strip())
         if target is None:
             return jsonify(ok=False, error="invalid file"), 400
         try:
@@ -111,7 +111,7 @@ def create_app(config: Config | None = None) -> Flask:
 
     @app.route("/media/<path:relpath>")
     def media(relpath):
-        target = _resolve_flac(recorder.mixes_dir, relpath)
+        target = _resolve_audio(recorder.mixes_dir, relpath)
         if target is None:
             abort(404)
         return send_from_directory(target.parent, target.name, as_attachment=True)
